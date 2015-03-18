@@ -189,7 +189,7 @@ class CurrencyField(models.CharField):
         return "CharField"
 
     def contribute_to_class(self, cls, name):
-        if not self.frozen_by_south and not name in [f.name for f in cls._meta.fields]:
+        if not self.frozen_by_south and name not in [f.name for f in cls._meta.fields]:
             super(CurrencyField, self).contribute_to_class(cls, name)
 
 
@@ -265,7 +265,7 @@ class MoneyField(models.DecimalField):
 
         # Don't run on abstract classes
         # Removed, see https://github.com/jakewins/django-money/issues/42
-        #if cls._meta.abstract:
+        # if cls._meta.abstract:
         #    return
 
         if not self.frozen_by_south:
@@ -275,7 +275,7 @@ class MoneyField(models.DecimalField):
             c_field = CurrencyField(
                 max_length=3, price_field=self,
                 default=self.default_currency, editable=False,
-                choices=self.currency_choices
+                choices=self.currency_choices, null=self.null
             )
             c_field.creation_counter = self.creation_counter
             cls.add_to_class(c_field_name, c_field)
@@ -293,7 +293,7 @@ class MoneyField(models.DecimalField):
 
     def get_db_prep_lookup(self, lookup_type, value, connection,
                            prepared=False):
-        if not lookup_type in SUPPORTED_LOOKUPS:
+        if lookup_type not in SUPPORTED_LOOKUPS:
             raise NotSupportedLookup(lookup_type)
         value = self.get_db_prep_save(value, connection)
         return super(MoneyField, self).get_db_prep_lookup(lookup_type, value,
@@ -326,7 +326,7 @@ class MoneyField(models.DecimalField):
         value = self._get_val_from_obj(obj)
         return self.get_prep_value(value)
 
-    ## South support
+    # South support
     def south_field_triple(self):
         "Returns a suitable description of this field for South."
         # Note: This method gets automatically with schemamigration time.
@@ -340,7 +340,7 @@ class MoneyField(models.DecimalField):
         kwargs['default_currency'] = "'%s'" % self.default_currency
         return field_class, args, kwargs
 
-    ## Django 1.7 migration support
+    # Django 1.7 migration support
     def deconstruct(self):
         name, path, args, kwargs = super(MoneyField, self).deconstruct()
 
